@@ -47,6 +47,19 @@
   .pkg-stars { font-size:14px; color:#FFD700; margin-top:4px; }
   .pkg-badge { font-size:9px; color:var(--teal); letter-spacing:2px; text-transform:uppercase; }
   .modal-close { background:transparent; border:2px solid rgba(255,255,255,0.25); color:rgba(255,255,255,0.6); font-family:'Rajdhani',sans-serif; font-size:13px; padding:9px 24px; border-radius:8px; cursor:pointer; }
+
+  #alpaca-strip { display:flex; justify-content:center; align-items:center; gap:20px; padding:4px 16px; background:rgba(0,20,40,0.95); border-bottom:1px solid rgba(0,255,209,0.18); flex-shrink:0; }
+  .alp-item { display:flex; align-items:center; gap:6px; }
+  .alp-label { font-size:9px; letter-spacing:2px; color:rgba(0,255,209,0.55); text-transform:uppercase; font-family:'Orbitron',monospace; }
+  .alp-val { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#00FFD1; }
+  .alp-val.pos { color:#00FF88; }
+  .alp-val.neg { color:#FF3B3B; }
+  .alp-dot { width:7px; height:7px; border-radius:50%; background:#555; flex-shrink:0; }
+  .alp-dot.live { background:#00FF88; box-shadow:0 0 6px #00FF88; animation:pulse 1.8s infinite; }
+  .alp-dot.err  { background:#FF3B3B; box-shadow:0 0 6px #FF3B3B; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .alp-trade-flash { animation:tradeFlash 0.7s ease-out; }
+  @keyframes tradeFlash { 0%{color:#fff;text-shadow:0 0 12px #00FFD1} 100%{} }
 </style>
 </head>
 <body>
@@ -59,6 +72,13 @@
   </div>
   <div id="title-badge">🐉 DRAGON KIRIN</div>
   <div class="multiplier-badge" id="multiplier-badge">1.0x • $0.10</div>
+</div>
+
+<div id="alpaca-strip">
+  <div class="alp-item"><div class="alp-dot" id="alp-dot"></div><span class="alp-label">ALPACA</span><span class="alp-val" id="alp-status">CONNECTING…</span></div>
+  <div class="alp-item"><span class="alp-label">EQUITY</span><span class="alp-val" id="alp-equity">—</span></div>
+  <div class="alp-item"><span class="alp-label">P&amp;L</span><span class="alp-val" id="alp-pnl">—</span></div>
+  <div class="alp-item"><span class="alp-label">LAST TRADE</span><span class="alp-val" id="alp-last-trade">—</span></div>
 </div>
 
 <div id="game-wrap">
@@ -96,6 +116,102 @@
 const tg = window.Telegram?.WebApp;
 if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor('#020B18'); tg.setBackgroundColor('#020B18'); }
 const tgUser = tg?.initDataUnsafe?.user;
+
+// ─── ALPACA PAPER TRADING INTEGRATION ────────────────────────────────────────
+const ALPACA_KEY    = 'PKAGLNSQU5ZIEN7ERVQKAY2BEI';
+const ALPACA_SECRET = '6zFZn5q6G4AmMA4KS9ZT23fbMPp9vGAtdSwKob2Ve8Vq';
+const ALPACA_BASE   = 'https://paper-api.alpaca.markets/v2';
+const ALPACA_HDRS   = {
+  'APCA-API-KEY-ID':     ALPACA_KEY,
+  'APCA-API-SECRET-KEY': ALPACA_SECRET,
+  'Content-Type':        'application/json'
+};
+
+// Fish → stock ticker mapping
+const FISH_STOCKS = {
+  'Clownfish': 'AAPL',
+  'Blowfish':  'TSLA',
+  'Crab':      'AMZN',
+  'Lobster':   'GOOGL',
+  'Turtle':    'NVDA',
+  'Octopus':   'META',
+  'Shark':     'SPY',
+  'Dolphin':   'QQQ',
+  'Whale':     'MSFT',
+  'Dragon':    'ARKK',
+  'Collector': 'COIN',
+  'Dragon Boss': 'SPY'
+};
+
+let alpacaConnected = false;
+let alpacaEquityVal = 0;
+let alpacaStartEquity = 0;
+
+function updateAlpacaHUD(equity, pnl){
+  const dot    = document.getElementById('alp-dot');
+  const status = document.getElementById('alp-status');
+  const eqEl   = document.getElementById('alp-equity');
+  const pnlEl  = document.getElementById('alp-pnl');
+  if(equity !== undefined){
+    dot.className    = 'alp-dot live';
+    status.textContent = 'LIVE';
+    eqEl.textContent   = '$' + equity.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(pnl !== undefined){
+      const sign = pnl >= 0 ? '+' : '';
+      pnlEl.textContent = sign + '$' + pnl.toFixed(2);
+      pnlEl.className   = 'alp-val ' + (pnl >= 0 ? 'pos' : 'neg');
+    }
+  } else {
+    dot.className    = 'alp-dot err';
+    status.textContent = 'OFFLINE';
+  }
+}
+
+async function fetchAlpacaAccount(){
+  try {
+    const res = await fetch(`${ALPACA_BASE}/account`, { headers: ALPACA_HDRS });
+    if(!res.ok) throw new Error(res.status);
+    const acct       = await res.json();
+    const equity     = parseFloat(acct.equity);
+    alpacaEquityVal  = equity;
+    alpacaConnected  = true;
+    if(alpacaStartEquity === 0) alpacaStartEquity = parseFloat(acct.last_equity) || equity;
+    const pnl = equity - alpacaStartEquity;
+    updateAlpacaHUD(equity, pnl);
+  } catch(e){
+    alpacaConnected = false;
+    updateAlpacaHUD();
+    console.warn('[Alpaca] account fetch failed:', e.message);
+  }
+}
+
+async function placePaperOrder(symbol, qty, side){
+  if(!alpacaConnected) return;
+  try {
+    const res = await fetch(`${ALPACA_BASE}/orders`, {
+      method:  'POST',
+      headers: ALPACA_HDRS,
+      body: JSON.stringify({ symbol, qty: String(qty), side, type:'market', time_in_force:'day' })
+    });
+    if(!res.ok){ console.warn('[Alpaca] order rejected:', res.status); return; }
+    const order = await res.json();
+    const el = document.getElementById('alp-last-trade');
+    el.textContent = `${side.toUpperCase()} ${qty} ${symbol}`;
+    el.classList.remove('alp-trade-flash');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('alp-trade-flash');
+    // Refresh balance after a short delay to let the paper order settle
+    setTimeout(fetchAlpacaAccount, 2500);
+    return order;
+  } catch(e){
+    console.warn('[Alpaca] order error:', e.message);
+  }
+}
+
+// Initial fetch + periodic refresh every 30 s
+fetchAlpacaAccount();
+setInterval(fetchAlpacaAccount, 30000);
+// ─────────────────────────────────────────────────────────────────────────────
 
 // SESSION PROFIT-CAP (unchanged but now integrates with new round timer)
 let sessionDeposit = 0, sessionCeiling = 0, sessionBaseCredits = 0, sessionPhase = 'NORMAL';
@@ -305,6 +421,10 @@ function checkHits(){
           updateHUD();
           showPopup(f.x, f.y, `+${earn}`, f.value >= 60 ? '#FF3B3B' : '#FFD700', f.value >= 60 ? '24px' : '16px');
           explosions.push({x:f.x, y:f.y, r:0, life:1.4, color:f.color});
+          // ALPACA: place a paper buy order mapped to this fish's stock
+          const fishSymbol = FISH_STOCKS[f.name] || 'SPY';
+          const fishQty = Math.max(1, Math.floor(f.value / 20));
+          placePaperOrder(fishSymbol, fishQty, 'buy');
           fishes.splice(fi,1);
           if(Math.random() < 0.35) shake = 6; // big hit shake
         }
@@ -329,6 +449,8 @@ function checkHits(){
           explosions.push({x:boss.x, y:boss.y, r:0, life:2.2, color:'#FF2200'});
           boss = null;
           shake = 12; // massive boss kill shake
+          // ALPACA: boss kill → large SPY buy order
+          placePaperOrder('SPY', 10, 'buy');
           // big multiplier boost on boss kill
           currentMultiplier = 10;
           setTimeout(()=>{ if(currentMultiplier===10) currentMultiplier=1 + Math.random()*4; updateHUD(); }, 18000);
