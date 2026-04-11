@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KirinStorm777 – Login</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+  :root{--gold:#FFD700;--teal:#00FFD1;--deep:#020B18;--neon:#FF6B00;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--deep);color:#fff;min-height:100vh;overflow-x:hidden;}
+  .orbitron{font-family:'Orbitron',monospace;}
+
+  /* Animated underwater background */
+  .bg-ocean{
+    position:fixed;inset:0;z-index:0;
+    background:radial-gradient(ellipse at 50% 0%,#0a2a4a 0%,#020B18 70%);
+    overflow:hidden;
+  }
+  .bubble{position:absolute;border-radius:50%;background:rgba(0,255,255,0.08);
+    border:1px solid rgba(0,255,255,0.15);animation:rise linear infinite;}
+  @keyframes rise{0%{transform:translateY(100vh) scale(0.5);opacity:0}
+    10%{opacity:1}90%{opacity:0.5}100%{transform:translateY(-10vh) scale(1.2);opacity:0}}
+  .caustic{position:absolute;border-radius:50%;background:rgba(0,200,255,0.04);
+    animation:causticPulse ease-in-out infinite alternate;}
+  @keyframes causticPulse{from{transform:scale(1) rotate(0deg);opacity:0.3}
+    to{transform:scale(1.4) rotate(60deg);opacity:0.07}}
+  .wave{position:absolute;bottom:0;width:200%;height:60px;
+    background:linear-gradient(transparent,rgba(0,100,200,0.15));
+    animation:waveMove linear infinite;}
+  @keyframes waveMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* Card */
+  .card{
+    background:linear-gradient(160deg,rgba(4,20,44,0.97),rgba(2,11,24,0.99));
+    border:1px solid rgba(255,215,0,0.3);
+    box-shadow:0 0 60px rgba(255,165,0,0.15),0 0 120px rgba(0,100,255,0.1),inset 0 1px 0 rgba(255,255,255,0.05);
+    border-radius:16px;
+  }
+  .glow-text{text-shadow:0 0 20px rgba(255,215,0,0.8),0 0 40px rgba(255,165,0,0.4);}
+  .glow-teal{text-shadow:0 0 20px rgba(0,255,209,0.8);}
+  .input-field{
+    width:100%;background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,215,0,0.25);border-radius:8px;
+    color:#fff;padding:12px 16px;font-family:'Rajdhani',sans-serif;font-size:15px;
+    transition:all 0.2s;outline:none;
+  }
+  .input-field:focus{border-color:rgba(255,215,0,0.7);box-shadow:0 0 12px rgba(255,215,0,0.2);}
+  .input-field::placeholder{color:rgba(255,255,255,0.3);}
+  .btn-fire{
+    background:linear-gradient(135deg,#FF6B00,#FF3B00,#FF8C00);
+    border:none;color:#fff;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;
+    padding:14px;border-radius:10px;cursor:pointer;width:100%;letter-spacing:2px;
+    box-shadow:0 0 25px rgba(255,80,0,0.6);transition:all 0.2s;
+  }
+  .btn-fire:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(255,80,0,0.8);}
+  .btn-fire:active{transform:translateY(0);}
+  .btn-teal{
+    background:linear-gradient(135deg,#00C897,#0088CC);
+    border:none;color:#fff;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;
+    padding:14px;border-radius:10px;cursor:pointer;width:100%;letter-spacing:2px;
+    box-shadow:0 0 25px rgba(0,200,150,0.4);transition:all 0.2s;
+  }
+  .btn-teal:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(0,200,150,0.6);}
+  .tab{cursor:pointer;padding:10px 24px;border-radius:8px;font-family:'Orbitron',monospace;
+    font-size:12px;font-weight:700;letter-spacing:1px;transition:all 0.2s;}
+  .tab.active{background:rgba(255,215,0,0.2);color:var(--gold);
+    box-shadow:0 0 12px rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);}
+  .tab.inactive{color:rgba(255,255,255,0.4);border:1px solid transparent;}
+  .toast{position:fixed;top:20px;right:20px;z-index:999;padding:14px 20px;border-radius:10px;
+    font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;max-width:320px;
+    animation:slideIn 0.3s ease;display:none;}
+  @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .fish-icon{animation:swim 6s ease-in-out infinite;}
+  @keyframes swim{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .dragon-glow{filter:drop-shadow(0 0 12px rgba(255,150,0,0.8)) drop-shadow(0 0 24px rgba(255,80,0,0.4));}
+</style>
+</head>
+<body>
+
+<!-- Animated Ocean Background -->
+<div class="bg-ocean" id="bgOcean"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Main Content -->
+<div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
+
+  <!-- Logo -->
+  <div class="text-center mb-8">
+    <div class="fish-icon text-7xl mb-3 dragon-glow">🐉</div>
+    <h1 class="orbitron text-4xl font-black glow-text" style="background:linear-gradient(135deg,#FFD700,#FF8C00,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+      KIRINSTORM
+    </h1>
+    <p class="orbitron text-xl font-black glow-teal" style="color:#00FFD1;letter-spacing:6px;">777</p>
+    <p class="text-sm mt-2" style="color:rgba(255,255,255,0.4);letter-spacing:3px;">FISH HUNTING ARCADE</p>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="card w-full max-w-sm p-8">
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-8">
+      <button class="tab active flex-1" id="tabLogin" onclick="switchTab('login')">LOGIN</button>
+      <button class="tab inactive flex-1" id="tabRegister" onclick="switchTab('register')">REGISTER</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">USERNAME</label>
+          <input type="text" id="loginUser" class="input-field" placeholder="Enter username" autocomplete="username" required>
+        </div>
+        <div>
+          <label class="block text-xs mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">PASSWORD</label>
+          <input type="password" id="loginPass" class="input-field" placeholder="Enter password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn-fire mt-2">🎮 ENTER GAME</button>
+      </div>
+    </form>
+
+    <!-- Register Form -->
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">USERNAME</label>
+          <input type="text" id="regUser" class="input-field" placeholder="3-20 characters (a-z, 0-9, _)" autocomplete="username" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+">
+        </div>
+        <div>
+          <label class="block text-xs mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">EMAIL (OPTIONAL)</label>
+          <input type="email" id="regEmail" class="input-field" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div>
+          <label class="block text-xs mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">PASSWORD</label>
+          <input type="password" id="regPass" class="input-field" placeholder="Minimum 6 characters" autocomplete="new-password" required minlength="6">
+        </div>
+        <div>
+          <label class="block text-xs mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">CONFIRM PASSWORD</label>
+          <input type="password" id="regPass2" class="input-field" placeholder="Repeat password" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="btn-teal mt-2">⭐ CREATE ACCOUNT</button>
+        <p class="text-center text-xs mt-2" style="color:rgba(255,255,255,0.4);">🎁 Get 1,000 FREE credits on signup!</p>
+      </div>
+    </form>
+  </div>
+
+  <!-- Features strip -->
+  <div class="flex gap-6 mt-8 flex-wrap justify-center">
+    <div class="text-center"><div class="text-2xl">🎣</div><div class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">20+ FISH TYPES</div></div>
+    <div class="text-center"><div class="text-2xl">💥</div><div class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">6 WEAPONS</div></div>
+    <div class="text-center"><div class="text-2xl">🏆</div><div class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">JACKPOT</div></div>
+    <div class="text-center"><div class="text-2xl">👑</div><div class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">VIP LEVELS</div></div>
+    <div class="text-center"><div class="text-2xl">⚡</div><div class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">BOSS ROUNDS</div></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+
+// ── Animated Background ──────────────────────────────────────
+(function buildBG() {
+  const bg = document.getElementById('bgOcean');
+  for (let i = 0; i < 18; i++) {
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const s = 10 + Math.random() * 50;
+    b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;
+      animation-duration:${8+Math.random()*14}s;animation-delay:${Math.random()*10}s;bottom:-${s}px;`;
+    bg.appendChild(b);
+  }
+  for (let i = 0; i < 5; i++) {
+    const c = document.createElement('div');
+    c.className = 'caustic';
+    const s = 100 + Math.random() * 300;
+    c.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;top:${Math.random()*100}%;
+      animation-duration:${4+Math.random()*6}s;`;
+    bg.appendChild(c);
+  }
+})();
+
+// ── Tab Switch ───────────────────────────────────────────────
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+  document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+  document.getElementById('tabLogin').className    = 'tab flex-1 ' + (isLogin ? 'active' : 'inactive');
+  document.getElementById('tabRegister').className = 'tab flex-1 ' + (!isLogin ? 'active' : 'inactive');
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type === 'success' ? 'rgba(0,180,100,0.95)' : type === 'warn' ? 'rgba(200,120,0,0.95)' : 'rgba(200,30,30,0.95)';
+  t.style.color = '#fff';
+  t.style.display = 'block';
+  t.style.animation = 'none';
+  void t.offsetWidth;
+  t.style.animation = 'slideIn 0.3s ease';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+// ── Login ────────────────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.textContent = 'LOADING...'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('loginUser').value.trim(), password: document.getElementById('loginPass').value })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    localStorage.setItem('ks_token', data.token);
+    localStorage.setItem('ks_player', JSON.stringify(data.player));
+    if (data.dailyBonus > 0) showToast(`🎁 Daily bonus: +${data.dailyBonus} credits!`, 'success');
+    else showToast('Welcome back! 🎮', 'success');
+    setTimeout(() => { window.location.href = '/game'; }, 800);
+  } catch (err) {
+    showToast(err.message);
+    btn.textContent = '🎮 ENTER GAME'; btn.disabled = false;
+  }
+}
+
+// ── Register ─────────────────────────────────────────────────
+async function handleRegister(e) {
+  e.preventDefault();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  if (pass !== pass2) { showToast('Passwords do not match'); return; }
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.textContent = 'CREATING...'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('regUser').value.trim(), email: document.getElementById('regEmail').value.trim(), password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    localStorage.setItem('ks_token', data.token);
+    localStorage.setItem('ks_player', JSON.stringify(data.player));
+    showToast('🎉 Account created! 1,000 free credits added!', 'success');
+    setTimeout(() => { window.location.href = '/game'; }, 1000);
+  } catch (err) {
+    showToast(err.message);
+    btn.textContent = '⭐ CREATE ACCOUNT'; btn.disabled = false;
+  }
+}
+
+// ── Auto-redirect if logged in ───────────────────────────────
+(async function checkAuth() {
+  const token = localStorage.getItem('ks_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    if (res.ok) window.location.href = '/game';
+  } catch {}
+})();
+</script>
+</body>
+</html>

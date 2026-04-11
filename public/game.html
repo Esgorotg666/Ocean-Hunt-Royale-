@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KirinStorm777 – Play</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+  :root{--gold:#FFD700;--teal:#00FFD1;--deep:#020B18;--neon:#FF6B00;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:#000;font-family:'Rajdhani',sans-serif;overflow:hidden;height:100vh;width:100vw;
+    display:flex;flex-direction:column;touch-action:none;user-select:none;}
+  .orbitron{font-family:'Orbitron',monospace;}
+
+  /* HUD */
+  #hud{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;
+    background:linear-gradient(180deg,rgba(0,0,0,0.96),rgba(2,11,24,0.85));
+    border-bottom:2px solid rgba(255,215,0,0.35);flex-shrink:0;
+    box-shadow:0 4px 20px rgba(0,0,0,0.7);}
+  .hud-col{display:flex;flex-direction:column;align-items:flex-start;min-width:90px;}
+  .hud-label{font-size:9px;letter-spacing:3px;color:rgba(255,215,0,0.6);text-transform:uppercase;}
+  .hud-value{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;}
+  #hud-credits{color:var(--teal);text-shadow:0 0 12px rgba(0,255,209,0.7);}
+  #hud-score{color:var(--gold);text-shadow:0 0 12px rgba(255,215,0,0.7);}
+  #hud-jackpot{color:#FF6600;text-shadow:0 0 12px rgba(255,100,0,0.7);font-size:14px;}
+  #title-area{text-align:center;}
+  #title-main{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+    background:linear-gradient(135deg,#FFD700,#FF8C00,#FFD700);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 6px rgba(255,165,0,0.6));}
+  #online-count{font-size:10px;color:rgba(0,255,200,0.6);}
+  #boss-alert{font-size:11px;color:#FF3B3B;font-family:'Orbitron',monospace;font-weight:700;
+    animation:blink 0.6s ease infinite alternate;display:none;}
+  @keyframes blink{from{opacity:1}to{opacity:0.2}}
+
+  /* Game Canvas */
+  #game-container{flex:1;position:relative;overflow:hidden;}
+  #game-container canvas{position:absolute;inset:0;width:100%!important;height:100%!important;}
+
+  /* Controls Bar */
+  #controls{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;
+    background:linear-gradient(0deg,rgba(0,0,0,0.97),rgba(2,11,24,0.88));
+    border-top:2px solid rgba(255,215,0,0.3);flex-shrink:0;gap:8px;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.7);}
+  .weapon-btn{background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.15);
+    color:rgba(255,255,255,0.5);font-family:'Orbitron',monospace;font-size:9px;
+    padding:5px 7px;border-radius:6px;cursor:pointer;transition:all 0.2s;line-height:1.3;text-align:center;}
+  .weapon-btn.active{background:rgba(255,165,0,0.25);border-color:var(--gold);color:var(--gold);
+    box-shadow:0 0 10px rgba(255,165,0,0.4);}
+  .bet-wrap{display:flex;align-items:center;gap:5px;}
+  .bet-label{font-size:9px;letter-spacing:2px;color:rgba(255,215,0,0.6);}
+  .bet-btn{background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.35);color:var(--gold);
+    font-family:'Orbitron',monospace;font-size:10px;padding:5px 8px;border-radius:5px;cursor:pointer;transition:all 0.2s;}
+  .bet-btn.active{background:rgba(255,215,0,0.3);border-color:var(--gold);box-shadow:0 0 10px rgba(255,215,0,0.4);}
+  #fire-btn{background:linear-gradient(135deg,#FF6B00,#FF3000,#FF8C00);border:none;color:#fff;
+    font-family:'Orbitron',monospace;font-size:12px;font-weight:900;padding:10px 18px;border-radius:8px;
+    cursor:pointer;letter-spacing:2px;box-shadow:0 0 20px rgba(255,80,0,0.7);transition:all 0.15s;flex-shrink:0;}
+  #fire-btn:active{transform:scale(0.94);}
+  #auto-btn{background:rgba(0,200,100,0.15);border:2px solid rgba(0,200,100,0.4);color:#00c864;
+    font-family:'Orbitron',monospace;font-size:9px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+  #auto-btn.on{background:rgba(0,200,100,0.35);border-color:#00c864;box-shadow:0 0 12px rgba(0,200,100,0.5);}
+
+  /* Overlays */
+  .overlay{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);}
+  .overlay.hidden{display:none;}
+  .win-popup{position:absolute;pointer-events:none;z-index:30;font-family:'Orbitron',monospace;
+    font-weight:900;text-shadow:0 3px 12px rgba(0,0,0,0.9);animation:winPop 1.4s ease-out forwards;}
+  @keyframes winPop{0%{opacity:1;transform:translateY(0) scale(0.8)}
+    40%{opacity:1;transform:translateY(-50px) scale(1.3)}
+    100%{opacity:0;transform:translateY(-120px) scale(0.5)}}
+  .toast-game{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.85);border:1px solid rgba(255,215,0,0.4);color:var(--gold);
+    font-family:'Orbitron',monospace;font-size:12px;padding:10px 20px;border-radius:20px;
+    pointer-events:none;z-index:35;animation:fadeUp 2.5s ease forwards;}
+  @keyframes fadeUp{0%{opacity:0;transform:translateX(-50%) translateY(10px)}
+    20%{opacity:1;transform:translateX(-50%) translateY(0)}
+    80%{opacity:1} 100%{opacity:0;transform:translateX(-50%) translateY(-20px)}}
+
+  /* Big Win Modal */
+  #bigWinModal{position:absolute;inset:0;z-index:40;display:none;align-items:center;
+    justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);}
+  .bigwin-box{text-align:center;animation:bounceIn 0.5s ease;}
+  @keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+  .bigwin-title{font-family:'Orbitron',monospace;font-size:clamp(28px,6vw,52px);font-weight:900;
+    background:linear-gradient(135deg,#FFD700,#FF8C00,#FFD700);-webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 20px rgba(255,165,0,0.8));}
+  .bigwin-amount{font-family:'Orbitron',monospace;font-size:clamp(36px,8vw,72px);font-weight:900;
+    color:#00FFD1;text-shadow:0 0 30px rgba(0,255,209,0.8);}
+  .bigwin-fish{font-size:clamp(40px,8vw,80px);animation:spin 0.8s ease infinite alternate;}
+  @keyframes spin{from{transform:rotateY(0)}to{transform:rotateY(30deg)}}
+
+  /* Leaderboard Panel */
+  #leaderPanel{position:absolute;right:0;top:0;bottom:0;width:200px;z-index:10;
+    background:rgba(2,11,24,0.92);border-left:1px solid rgba(255,215,0,0.2);
+    transform:translateX(100%);transition:transform 0.3s;overflow-y:auto;padding:12px;}
+  #leaderPanel.open{transform:translateX(0);}
+  .leader-row{display:flex;gap:8px;align-items:center;padding:6px 0;
+    border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;}
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-col">
+    <div class="hud-label">CREDITS</div>
+    <div class="hud-value" id="hud-credits">0</div>
+  </div>
+  <div id="title-area">
+    <div id="title-main">🐉 KIRINSTORM 777</div>
+    <div id="boss-alert">⚡ BOSS INCOMING!</div>
+    <div id="online-count">● 1 online</div>
+  </div>
+  <div class="hud-col" style="align-items:flex-end;">
+    <div class="hud-label">JACKPOT</div>
+    <div class="hud-value" id="hud-jackpot">0</div>
+    <div class="hud-label" style="margin-top:2px;">SCORE</div>
+    <div class="hud-value" id="hud-score" style="font-size:13px;">0</div>
+  </div>
+</div>
+
+<!-- Game Canvas -->
+<div id="game-container">
+  <!-- Phaser renders here -->
+  <div id="bigWinModal" style="display:flex;display:none;">
+    <div class="bigwin-box">
+      <div class="bigwin-fish" id="bwFish">🐟</div>
+      <div class="bigwin-title" id="bwTitle">BIG WIN!</div>
+      <div class="bigwin-amount" id="bwAmount">+5000</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:14px;margin-top:8px;" id="bwFishName">Fire Kirin</div>
+    </div>
+  </div>
+</div>
+
+<!-- Controls Bar -->
+<div id="controls">
+  <!-- Weapon selector -->
+  <div style="display:flex;gap:4px;flex-shrink:0;">
+    <button class="weapon-btn active" data-weapon="standard" onclick="selectWeapon('standard',this)">🔫<br>STD</button>
+    <button class="weapon-btn" data-weapon="fishnet" onclick="selectWeapon('fishnet',this)">🕸️<br>NET</button>
+    <button class="weapon-btn" data-weapon="torpedo" onclick="selectWeapon('torpedo',this)">🚀<br>TRP</button>
+    <button class="weapon-btn" data-weapon="laser" onclick="selectWeapon('laser',this)">⚡<br>LZR</button>
+    <button class="weapon-btn" data-weapon="lightning" onclick="selectWeapon('lightning',this)">🌩️<br>LTG</button>
+    <button class="weapon-btn" data-weapon="bomb" onclick="selectWeapon('bomb',this)">💣<br>BMB</button>
+  </div>
+  <!-- Bet -->
+  <div class="bet-wrap">
+    <span class="bet-label">BET</span>
+    <button class="bet-btn active" data-bet="1" onclick="selectBet(1,this)">×1</button>
+    <button class="bet-btn" data-bet="2" onclick="selectBet(2,this)">×2</button>
+    <button class="bet-btn" data-bet="5" onclick="selectBet(5,this)">×5</button>
+    <button class="bet-btn" data-bet="10" onclick="selectBet(10,this)">×10</button>
+    <button class="bet-btn" data-bet="20" onclick="selectBet(20,this)">×20</button>
+  </div>
+  <!-- Fire & Auto -->
+  <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+    <button id="fire-btn" ontouchstart="manualFire()" onclick="manualFire()">🔥 FIRE</button>
+    <button id="auto-btn" onclick="toggleAuto()">AUTO: OFF</button>
+  </div>
+</div>
+
+<!-- Leaderboard Panel -->
+<div id="leaderPanel">
+  <div class="orbitron" style="font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;">🏆 TOP PLAYERS</div>
+  <div id="leaderList"></div>
+</div>
+
+<!-- Phaser 3 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+
+<!-- Game Modules (order matters) -->
+<script src="/js/game/GameConfig.js"></script>
+<script src="/js/game/systems/NetworkManager.js"></script>
+<script src="/js/game/systems/ParticleManager.js"></script>
+<script src="/js/game/systems/FishSpawner.js"></script>
+<script src="/js/game/entities/Fish.js"></script>
+<script src="/js/game/entities/Cannon.js"></script>
+<script src="/js/game/entities/Bullet.js"></script>
+<script src="/js/game/entities/Boss.js"></script>
+<script src="/js/game/scenes/BootScene.js"></script>
+<script src="/js/game/scenes/PreloadScene.js"></script>
+<script src="/js/game/scenes/GameScene.js"></script>
+<script src="/js/game/scenes/UIScene.js"></script>
+<script src="/js/game/main.js"></script>
+
+<script>
+// ── Auth Guard ────────────────────────────────────────────────
+const token  = localStorage.getItem('ks_token');
+const player = JSON.parse(localStorage.getItem('ks_player') || 'null');
+if (!token || !player) { window.location.href = '/'; }
+
+// ── HUD Update (called from game) ────────────────────────────
+function updateHUD(credits, score) {
+  document.getElementById('hud-credits').textContent = Math.floor(credits).toLocaleString();
+  document.getElementById('hud-score').textContent   = Math.floor(score).toLocaleString();
+}
+
+// ── Weapon Selection ─────────────────────────────────────────
+let currentWeapon = 'standard';
+function selectWeapon(weapon, btn) {
+  currentWeapon = weapon;
+  document.querySelectorAll('.weapon-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (window.gameInstance) window.gameInstance.events.emit('weapon:change', weapon);
+}
+
+// ── Bet Selection ────────────────────────────────────────────
+let currentBet = 1;
+function selectBet(bet, btn) {
+  currentBet = bet;
+  document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (window.gameInstance) window.gameInstance.events.emit('bet:change', bet);
+}
+
+// ── Manual Fire ──────────────────────────────────────────────
+function manualFire() {
+  if (window.gameInstance) window.gameInstance.events.emit('manual:fire');
+}
+
+// ── Auto Fire ────────────────────────────────────────────────
+let autoFire = false;
+function toggleAuto() {
+  autoFire = !autoFire;
+  const btn = document.getElementById('auto-btn');
+  btn.textContent = autoFire ? 'AUTO: ON' : 'AUTO: OFF';
+  btn.classList.toggle('on', autoFire);
+  if (window.gameInstance) window.gameInstance.events.emit('autofire:toggle', autoFire);
+}
+
+// ── Big Win Modal ─────────────────────────────────────────────
+function showBigWin(fishName, amount, emoji = '🐟') {
+  const modal = document.getElementById('bigWinModal');
+  document.getElementById('bwFish').textContent   = emoji;
+  document.getElementById('bwTitle').textContent  = amount >= 5000 ? '🎰 JACKPOT!! 🎰' : '🎉 BIG WIN!';
+  document.getElementById('bwAmount').textContent = '+' + Math.floor(amount).toLocaleString();
+  document.getElementById('bwFishName').textContent = fishName;
+  modal.style.display = 'flex';
+  setTimeout(() => { modal.style.display = 'none'; }, 3500);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showGameToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast-game';
+  el.textContent = msg;
+  document.getElementById('game-container').appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+// ── Jackpot Ticker (Socket.io) ────────────────────────────────
+// Connected inside main.js after Phaser boot
+function updateJackpot(amount) {
+  document.getElementById('hud-jackpot').textContent = Math.floor(amount).toLocaleString();
+}
+
+// ── Boss Alert ────────────────────────────────────────────────
+function showBossAlert(show) {
+  document.getElementById('boss-alert').style.display = show ? 'block' : 'none';
+}
+
+// ── Leaderboard ───────────────────────────────────────────────
+async function loadLeaderboard() {
+  try {
+    const res = await fetch('/api/game/leaderboard', { headers: { Authorization: 'Bearer ' + token } });
+    const d   = await res.json();
+    const medals = ['🥇','🥈','🥉'];
+    document.getElementById('leaderList').innerHTML = d.leaders.slice(0,10).map((p, i) => `
+      <div class="leader-row">
+        <span style="width:20px;">${medals[i] || (i+1)}</span>
+        <span style="color:var(--teal);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.username}</span>
+        <span style="color:var(--gold);font-family:'Orbitron',monospace;font-size:10px;">${Math.floor(p.total_won).toLocaleString()}</span>
+      </div>`).join('');
+  } catch {}
+}
+
+loadLeaderboard();
+setInterval(loadLeaderboard, 60000);
+</script>
+</body>
+</html>

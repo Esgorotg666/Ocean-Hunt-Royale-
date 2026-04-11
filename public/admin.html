@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KirinStorm777 – Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+  :root{--gold:#FFD700;--teal:#00FFD1;--deep:#020B18;--card:#041428;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--deep);color:#e0e0e0;min-height:100vh;}
+  .orbitron{font-family:'Orbitron',monospace;}
+  .sidebar{width:240px;min-height:100vh;background:rgba(4,20,44,0.98);
+    border-right:1px solid rgba(255,215,0,0.15);flex-shrink:0;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;
+    transition:all 0.2s;border-left:3px solid transparent;font-size:14px;font-weight:600;}
+  .nav-item:hover{background:rgba(255,215,0,0.08);color:var(--gold);}
+  .nav-item.active{background:rgba(255,215,0,0.12);color:var(--gold);border-left-color:var(--gold);}
+  .stat-card{background:rgba(4,20,44,0.9);border:1px solid rgba(255,215,0,0.2);
+    border-radius:12px;padding:20px;transition:all 0.2s;}
+  .stat-card:hover{border-color:rgba(255,215,0,0.5);box-shadow:0 0 20px rgba(255,215,0,0.1);}
+  .stat-val{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;}
+  .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}
+  .badge-active{background:rgba(0,200,100,0.2);color:#00c864;border:1px solid rgba(0,200,100,0.4);}
+  .badge-banned{background:rgba(200,30,30,0.2);color:#ff4444;border:1px solid rgba(200,30,30,0.4);}
+  .badge-vip{background:rgba(255,215,0,0.2);color:var(--gold);border:1px solid rgba(255,215,0,0.4);}
+  .badge-admin{background:rgba(150,0,255,0.2);color:#cc88ff;border:1px solid rgba(150,0,255,0.4);}
+  table{width:100%;border-collapse:collapse;}
+  th{padding:10px 12px;text-align:left;font-family:'Orbitron',monospace;font-size:10px;
+    letter-spacing:2px;color:rgba(255,215,0,0.7);border-bottom:1px solid rgba(255,215,0,0.2);}
+  td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;}
+  tr:hover td{background:rgba(255,215,0,0.04);}
+  .btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+    border:none;font-family:'Orbitron',monospace;letter-spacing:1px;transition:all 0.2s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn-green{background:rgba(0,180,100,0.8);color:#fff;}
+  .btn-red{background:rgba(200,30,30,0.8);color:#fff;}
+  .btn-gold{background:linear-gradient(135deg,rgba(255,165,0,0.9),rgba(200,120,0,0.9));color:#000;}
+  .btn-blue{background:rgba(0,100,220,0.8);color:#fff;}
+  .btn-gray{background:rgba(100,100,120,0.6);color:#fff;}
+  .input-adm{background:rgba(255,255,255,0.05);border:1px solid rgba(255,215,0,0.25);
+    border-radius:8px;color:#fff;padding:10px 14px;font-size:13px;font-family:'Rajdhani',sans-serif;
+    outline:none;transition:all 0.2s;width:100%;}
+  .input-adm:focus{border-color:rgba(255,215,0,0.6);box-shadow:0 0 10px rgba(255,215,0,0.15);}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:50;
+    display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .modal-box{background:linear-gradient(160deg,#041428,#020B18);border:1px solid rgba(255,215,0,0.4);
+    border-radius:14px;padding:28px;width:92%;max-width:480px;box-shadow:0 0 60px rgba(255,165,0,0.2);}
+  .toast{position:fixed;top:16px;right:16px;z-index:999;padding:12px 18px;border-radius:10px;
+    font-size:14px;font-weight:600;display:none;max-width:300px;animation:slideIn 0.3s;}
+  @keyframes slideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
+  .section{display:none;} .section.active{display:block;}
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#020B18;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.3);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- Login Wall -->
+<div id="loginWall" class="fixed inset-0 z-50 flex items-center justify-center"
+  style="background:radial-gradient(ellipse at center,#0a1f3a,#020B18);">
+  <div class="text-center" style="max-width:360px;width:90%;">
+    <div class="text-6xl mb-4">🛡️</div>
+    <h1 class="orbitron text-2xl font-black mb-2" style="color:var(--gold);">ADMIN PANEL</h1>
+    <p class="text-sm mb-8" style="color:rgba(255,255,255,0.4);">KirinStorm777 Management</p>
+    <form onsubmit="adminLogin(event)" class="space-y-4">
+      <input type="text" id="aUser" class="input-adm" placeholder="Admin Username" required>
+      <input type="password" id="aPass" class="input-adm" placeholder="Password" required>
+      <button type="submit" class="btn btn-gold w-full py-3 text-sm">ENTER ADMIN PANEL</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Layout -->
+<div id="adminApp" class="flex" style="display:none!important;">
+  <!-- Sidebar -->
+  <div class="sidebar flex flex-col">
+    <div class="p-5 border-b" style="border-color:rgba(255,215,0,0.15);">
+      <div class="orbitron text-lg font-black" style="color:var(--gold);">⚡ KIRINSTORM</div>
+      <div class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">Admin Console v1.0</div>
+    </div>
+    <nav class="flex-1 py-4">
+      <div class="nav-item active" onclick="showSection('dashboard')" id="nav-dashboard">📊 Dashboard</div>
+      <div class="nav-item" onclick="showSection('players')" id="nav-players">👥 Players</div>
+      <div class="nav-item" onclick="showSection('transactions')" id="nav-transactions">💳 Transactions</div>
+      <div class="nav-item" onclick="showSection('jackpot')" id="nav-jackpot">🏆 Jackpot</div>
+      <div class="nav-item" onclick="showSection('create')" id="nav-create">➕ Create Player</div>
+    </nav>
+    <div class="p-4 border-t" style="border-color:rgba(255,215,0,0.15);">
+      <div class="text-xs mb-2" style="color:rgba(255,255,255,0.3);">Logged in as</div>
+      <div class="text-sm font-bold" style="color:var(--gold);" id="adminName">admin</div>
+      <button onclick="adminLogout()" class="btn btn-gray mt-3 w-full text-xs py-2">LOGOUT</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 overflow-auto">
+    <div class="p-6">
+
+      <!-- Dashboard -->
+      <div class="section active" id="sec-dashboard">
+        <h2 class="orbitron text-xl font-black mb-6" style="color:var(--gold);">📊 Dashboard</h2>
+        <div class="grid grid-cols-2 gap-4 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
+          <div class="stat-card"><div class="text-xs mb-1" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">TOTAL PLAYERS</div><div class="stat-val" id="st-players" style="color:var(--teal);">—</div></div>
+          <div class="stat-card"><div class="text-xs mb-1" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">TOTAL WAGERED</div><div class="stat-val" id="st-wagered" style="color:var(--gold);">—</div></div>
+          <div class="stat-card"><div class="text-xs mb-1" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">HOUSE PROFIT</div><div class="stat-val" id="st-profit" style="color:#00ff88;">—</div></div>
+          <div class="stat-card"><div class="text-xs mb-1" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">JACKPOT POOL</div><div class="stat-val" id="st-jackpot" style="color:#ff6600;">—</div></div>
+          <div class="stat-card"><div class="text-xs mb-1" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">TODAY SIGNUPS</div><div class="stat-val" id="st-signups" style="color:#cc88ff;">—</div></div>
+          <div class="stat-card"><div class="text-xs mb-1" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">CREDITS IN PLAY</div><div class="stat-val" id="st-credits" style="color:var(--teal);">—</div></div>
+        </div>
+        <h3 class="orbitron text-sm font-bold mb-3" style="color:rgba(255,215,0,0.7);">RECENT TRANSACTIONS</h3>
+        <div style="background:rgba(4,20,44,0.8);border:1px solid rgba(255,215,0,0.15);border-radius:12px;overflow:auto;">
+          <table><thead><tr><th>PLAYER</th><th>TYPE</th><th>AMOUNT</th><th>BALANCE</th><th>DESC</th><th>DATE</th></tr></thead>
+          <tbody id="recentTxBody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Players -->
+      <div class="section" id="sec-players">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h2 class="orbitron text-xl font-black" style="color:var(--gold);">👥 Players</h2>
+          <div class="flex gap-2 flex-wrap">
+            <input type="text" id="searchInput" class="input-adm" style="width:200px;" placeholder="Search username..." oninput="loadPlayers()">
+            <select class="input-adm" style="width:120px;" id="statusFilter" onchange="loadPlayers()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="banned">Banned</option>
+              <option value="vip">VIP</option>
+            </select>
+          </div>
+        </div>
+        <div style="background:rgba(4,20,44,0.8);border:1px solid rgba(255,215,0,0.15);border-radius:12px;overflow:auto;">
+          <table><thead><tr><th>ID</th><th>USERNAME</th><th>CREDITS</th><th>WAGERED</th><th>WON</th><th>VIP</th><th>STATUS</th><th>JOINED</th><th>ACTIONS</th></tr></thead>
+          <tbody id="playersBody"></tbody></table>
+        </div>
+        <div class="flex gap-2 mt-4 items-center">
+          <button class="btn btn-gray" onclick="changePage(-1)">← PREV</button>
+          <span id="pageInfo" class="text-sm px-4" style="color:rgba(255,255,255,0.5);">Page 1</span>
+          <button class="btn btn-gray" onclick="changePage(1)">NEXT →</button>
+        </div>
+      </div>
+
+      <!-- Transactions -->
+      <div class="section" id="sec-transactions">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h2 class="orbitron text-xl font-black" style="color:var(--gold);">💳 Transactions</h2>
+          <div class="flex gap-2">
+            <select class="input-adm" style="width:140px;" id="txTypeFilter" onchange="loadTransactions()">
+              <option value="">All Types</option>
+              <option value="bet">Bets</option>
+              <option value="win">Wins</option>
+              <option value="bonus">Bonuses</option>
+              <option value="admin_add">Admin Add</option>
+              <option value="admin_remove">Admin Remove</option>
+              <option value="jackpot">Jackpot</option>
+            </select>
+            <a id="exportBtn" class="btn btn-gold" style="text-decoration:none;display:flex;align-items:center;">⬇ EXPORT CSV</a>
+          </div>
+        </div>
+        <div style="background:rgba(4,20,44,0.8);border:1px solid rgba(255,215,0,0.15);border-radius:12px;overflow:auto;">
+          <table><thead><tr><th>ID</th><th>PLAYER</th><th>TYPE</th><th>AMOUNT</th><th>BALANCE AFTER</th><th>DESCRIPTION</th><th>DATE</th></tr></thead>
+          <tbody id="txBody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Jackpot -->
+      <div class="section" id="sec-jackpot">
+        <h2 class="orbitron text-xl font-black mb-6" style="color:var(--gold);">🏆 Jackpot Manager</h2>
+        <div class="stat-card mb-6" style="max-width:400px;">
+          <div class="text-xs mb-2" style="color:rgba(255,255,255,0.5);letter-spacing:2px;">CURRENT JACKPOT</div>
+          <div class="stat-val text-5xl mb-4" id="jpAmount" style="color:#ff6600;">—</div>
+          <div class="flex gap-3">
+            <input type="number" id="jpNewVal" class="input-adm" placeholder="Set new amount" min="0">
+            <button class="btn btn-gold" onclick="setJackpot()">SET</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Player -->
+      <div class="section" id="sec-create">
+        <h2 class="orbitron text-xl font-black mb-6" style="color:var(--gold);">➕ Create Player</h2>
+        <div class="stat-card" style="max-width:440px;">
+          <form onsubmit="createPlayer(event)" class="space-y-4">
+            <div><label class="text-xs block mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">USERNAME</label>
+              <input type="text" id="cpUser" class="input-adm" placeholder="Username" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+"></div>
+            <div><label class="text-xs block mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">EMAIL (OPTIONAL)</label>
+              <input type="email" id="cpEmail" class="input-adm" placeholder="Email"></div>
+            <div><label class="text-xs block mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">PASSWORD</label>
+              <input type="password" id="cpPass" class="input-adm" placeholder="Password" required minlength="6"></div>
+            <div><label class="text-xs block mb-1" style="color:rgba(255,215,0,0.7);letter-spacing:2px;">STARTING CREDITS</label>
+              <input type="number" id="cpCredits" class="input-adm" placeholder="0" min="0" value="1000"></div>
+            <button type="submit" class="btn btn-green w-full py-3">CREATE PLAYER</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Player Detail Modal -->
+<div class="modal-bg" id="playerModal" style="display:none;">
+  <div class="modal-box" style="max-width:540px;max-height:85vh;overflow-y:auto;">
+    <h3 class="orbitron text-lg font-black mb-4" style="color:var(--gold);">👤 Player Details</h3>
+    <div id="playerDetail"></div>
+    <div class="flex gap-2 justify-end mt-6">
+      <button class="btn btn-gray" onclick="closeModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let adminToken = '';
+let currentPage = 1;
+
+// ── Admin Login ──────────────────────────────────────────────
+async function adminLogin(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button');
+  btn.textContent = 'VERIFYING...'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('aUser').value.trim(), password: document.getElementById('aPass').value })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    if (!data.player.is_admin) throw new Error('Not an admin account');
+    adminToken = data.token;
+    localStorage.setItem('ks_admin_token', adminToken);
+    document.getElementById('adminName').textContent = data.player.username;
+    document.getElementById('loginWall').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'flex';
+    loadDashboard();
+  } catch (err) {
+    showToast(err.message, 'error');
+    btn.textContent = 'ENTER ADMIN PANEL'; btn.disabled = false;
+  }
+}
+
+// ── Auto-restore session ─────────────────────────────────────
+(async function restoreSession() {
+  const t = localStorage.getItem('ks_admin_token');
+  if (!t) return;
+  try {
+    const res = await fetch(`${API}/api/auth/me`, { headers: { Authorization: 'Bearer ' + t } });
+    const data = await res.json();
+    if (res.ok && data.player.is_admin) {
+      adminToken = t;
+      document.getElementById('adminName').textContent = data.player.username;
+      document.getElementById('loginWall').style.display = 'none';
+      document.getElementById('adminApp').style.display = 'flex';
+      loadDashboard();
+    }
+  } catch {}
+})();
+
+function adminLogout() { localStorage.removeItem('ks_admin_token'); location.reload(); }
+
+// ── Navigation ───────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'players') loadPlayers();
+  if (name === 'transactions') loadTransactions();
+  if (name === 'jackpot') loadJackpot();
+}
+
+// ── API Helper ───────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(API + url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken, ...(opts.headers || {}) }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'API error');
+  return data;
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type === 'success' ? 'rgba(0,160,80,0.95)' : 'rgba(180,30,30,0.95)';
+  t.style.color = '#fff'; t.style.display = 'block';
+  t.style.animation = 'none'; void t.offsetWidth; t.style.animation = 'slideIn 0.3s';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ── Dashboard ────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await apiFetch('/api/admin/dashboard');
+    const s = d.stats;
+    document.getElementById('st-players').textContent = s.totalPlayers.toLocaleString();
+    document.getElementById('st-wagered').textContent = Math.floor(s.totalWagered).toLocaleString();
+    document.getElementById('st-profit').textContent  = Math.floor(s.houseEdge).toLocaleString();
+    document.getElementById('st-jackpot').textContent = Math.floor(s.jackpot).toLocaleString();
+    document.getElementById('st-signups').textContent = s.todaySignups.toLocaleString();
+    document.getElementById('st-credits').textContent = Math.floor(s.totalCredits).toLocaleString();
+    const tbody = document.getElementById('recentTxBody');
+    tbody.innerHTML = d.recentTransactions.map(t => `
+      <tr>
+        <td class="font-bold" style="color:var(--teal);">${t.username}</td>
+        <td><span class="badge ${txBadge(t.type)}">${t.type.toUpperCase()}</span></td>
+        <td class="${t.amount >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${t.amount >= 0 ? '+' : ''}${t.amount}</td>
+        <td>${Math.floor(t.balance_after)}</td>
+        <td style="color:rgba(255,255,255,0.5);max-width:160px;overflow:hidden;text-overflow:ellipsis;">${t.description || ''}</td>
+        <td style="color:rgba(255,255,255,0.4);font-size:11px;">${t.created_at.slice(0,16)}</td>
+      </tr>`).join('');
+  } catch (err) { showToast(err.message); }
+}
+
+function txBadge(type) {
+  return { bet:'badge-banned', win:'badge-active', bonus:'badge-vip', jackpot:'badge-admin', admin_add:'badge-active', admin_remove:'badge-banned' }[type] || '';
+}
+
+// ── Players ──────────────────────────────────────────────────
+async function loadPlayers() {
+  try {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const d = await apiFetch(`/api/admin/players?page=${currentPage}&search=${encodeURIComponent(search)}&status=${status}`);
+    document.getElementById('pageInfo').textContent = `Page ${d.page} · ${d.total} players`;
+    document.getElementById('playersBody').innerHTML = d.players.map(p => `
+      <tr>
+        <td style="color:rgba(255,255,255,0.4);">#${p.id}</td>
+        <td class="font-bold" style="color:var(--teal);">${p.username}</td>
+        <td class="font-bold" style="color:var(--gold);">${Math.floor(p.credits).toLocaleString()}</td>
+        <td style="color:rgba(255,255,255,0.6);">${Math.floor(p.total_wagered).toLocaleString()}</td>
+        <td style="color:#00ff88;">${Math.floor(p.total_won).toLocaleString()}</td>
+        <td><span class="badge badge-vip">Lv${p.vip_level}</span></td>
+        <td><span class="badge ${p.status==='active'?'badge-active':p.status==='banned'?'badge-banned':'badge-vip'}">${p.status.toUpperCase()}</span></td>
+        <td style="color:rgba(255,255,255,0.4);font-size:11px;">${p.created_at.slice(0,10)}</td>
+        <td>
+          <button class="btn btn-blue" onclick="openPlayer(${p.id})" style="font-size:10px;padding:5px 10px;">MANAGE</button>
+        </td>
+      </tr>`).join('');
+  } catch (err) { showToast(err.message); }
+}
+
+function changePage(dir) {
+  currentPage = Math.max(1, currentPage + dir);
+  loadPlayers();
+}
+
+// ── Player Modal ─────────────────────────────────────────────
+async function openPlayer(id) {
+  try {
+    const d = await apiFetch(`/api/admin/players/${id}`);
+    const p = d.player;
+    document.getElementById('playerDetail').innerHTML = `
+      <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
+        <div><span style="color:rgba(255,255,255,0.4);">Username:</span> <span class="font-bold" style="color:var(--teal);">${p.username}</span></div>
+        <div><span style="color:rgba(255,255,255,0.4);">Status:</span> <span class="badge ${p.status==='active'?'badge-active':'badge-banned'}">${p.status.toUpperCase()}</span></div>
+        <div><span style="color:rgba(255,255,255,0.4);">Credits:</span> <span class="font-bold" style="color:var(--gold);">${Math.floor(p.credits).toLocaleString()}</span></div>
+        <div><span style="color:rgba(255,255,255,0.4);">VIP Level:</span> ${p.vip_level}</div>
+        <div><span style="color:rgba(255,255,255,0.4);">Total Wagered:</span> ${Math.floor(p.total_wagered).toLocaleString()}</div>
+        <div><span style="color:rgba(255,255,255,0.4);">Total Won:</span> ${Math.floor(p.total_won).toLocaleString()}</div>
+        <div><span style="color:rgba(255,255,255,0.4);">Last Login:</span> ${p.last_login ? p.last_login.slice(0,16) : 'Never'}</div>
+        <div><span style="color:rgba(255,255,255,0.4);">Joined:</span> ${p.created_at.slice(0,10)}</div>
+      </div>
+      <hr style="border-color:rgba(255,215,0,0.15);margin:12px 0;">
+      <div class="space-y-3">
+        <div class="flex gap-2 items-center">
+          <input type="number" id="creditAmt" class="input-adm" placeholder="Amount (+ or -)" style="flex:1;">
+          <input type="text" id="creditReason" class="input-adm" placeholder="Reason" style="flex:1;">
+          <button class="btn btn-gold" onclick="adjustCredits(${p.id})">ADJUST</button>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="btn btn-green" onclick="setStatus(${p.id},'active')">SET ACTIVE</button>
+          <button class="btn btn-red" onclick="setStatus(${p.id},'banned')">BAN</button>
+          <button class="btn btn-gold" onclick="setStatus(${p.id},'vip')">SET VIP</button>
+        </div>
+        <div class="flex gap-2 items-center">
+          <input type="password" id="newPw" class="input-adm" placeholder="New password" style="flex:1;">
+          <button class="btn btn-blue" onclick="resetPw(${p.id})">RESET PW</button>
+        </div>
+      </div>
+      <h4 class="orbitron text-xs mt-5 mb-2" style="color:rgba(255,215,0,0.6);letter-spacing:2px;">RECENT TRANSACTIONS</h4>
+      <div style="max-height:200px;overflow-y:auto;font-size:12px;">
+        ${d.transactions.slice(0,15).map(t => `
+          <div class="flex justify-between py-1" style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span class="badge ${txBadge(t.type)}" style="font-size:10px;">${t.type}</span>
+            <span class="${t.amount>=0?'text-green-400':'text-red-400'} font-bold">${t.amount>=0?'+':''}${t.amount}</span>
+            <span style="color:rgba(255,255,255,0.4);">${t.created_at.slice(0,16)}</span>
+          </div>`).join('')}
+      </div>`;
+    document.getElementById('playerModal').style.display = 'flex';
+  } catch (err) { showToast(err.message); }
+}
+
+function closeModal() { document.getElementById('playerModal').style.display = 'none'; }
+
+async function adjustCredits(id) {
+  const amount = parseFloat(document.getElementById('creditAmt').value);
+  const reason = document.getElementById('creditReason').value || 'Admin adjustment';
+  if (isNaN(amount)) return showToast('Enter a valid amount');
+  try {
+    const d = await apiFetch(`/api/admin/players/${id}/credits`, { method: 'PATCH', body: JSON.stringify({ amount, reason }) });
+    showToast(`Credits adjusted. New balance: ${Math.floor(d.newBalance)}`, 'success');
+    openPlayer(id); loadPlayers();
+  } catch (err) { showToast(err.message); }
+}
+
+async function setStatus(id, status) {
+  try {
+    await apiFetch(`/api/admin/players/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    showToast(`Status set to ${status}`, 'success');
+    openPlayer(id); loadPlayers();
+  } catch (err) { showToast(err.message); }
+}
+
+async function resetPw(id) {
+  const pw = document.getElementById('newPw').value;
+  if (!pw || pw.length < 6) return showToast('Password must be at least 6 characters');
+  try {
+    await apiFetch(`/api/admin/players/${id}/reset-password`, { method: 'PATCH', body: JSON.stringify({ newPassword: pw }) });
+    showToast('Password reset successfully', 'success');
+  } catch (err) { showToast(err.message); }
+}
+
+// ── Transactions ─────────────────────────────────────────────
+async function loadTransactions() {
+  const type = document.getElementById('txTypeFilter').value;
+  document.getElementById('exportBtn').href = `/api/admin/export/transactions?token=${adminToken}`;
+  // Fix: pass token via header (export link is direct download)
+  try {
+    const d = await apiFetch(`/api/admin/transactions?type=${type}`);
+    document.getElementById('txBody').innerHTML = d.transactions.map(t => `
+      <tr>
+        <td style="color:rgba(255,255,255,0.3);font-size:11px;">#${t.id}</td>
+        <td style="color:var(--teal);font-weight:700;">${t.username}</td>
+        <td><span class="badge ${txBadge(t.type)}">${t.type}</span></td>
+        <td class="${t.amount>=0?'text-green-400':'text-red-400'} font-bold">${t.amount>=0?'+':''}${Math.round(t.amount)}</td>
+        <td style="color:rgba(255,255,255,0.7);">${Math.floor(t.balance_after).toLocaleString()}</td>
+        <td style="color:rgba(255,255,255,0.4);max-width:180px;overflow:hidden;text-overflow:ellipsis;">${t.description||''}</td>
+        <td style="color:rgba(255,255,255,0.35);font-size:11px;">${t.created_at.slice(0,16)}</td>
+      </tr>`).join('');
+  } catch (err) { showToast(err.message); }
+}
+
+// ── Jackpot ──────────────────────────────────────────────────
+async function loadJackpot() {
+  try {
+    const d = await apiFetch('/api/game/jackpot');
+    document.getElementById('jpAmount').textContent = Math.floor(d.amount).toLocaleString();
+  } catch {}
+}
+
+async function setJackpot() {
+  const amount = parseFloat(document.getElementById('jpNewVal').value);
+  if (isNaN(amount) || amount < 0) return showToast('Enter valid amount');
+  try {
+    await apiFetch('/api/admin/jackpot', { method: 'PATCH', body: JSON.stringify({ amount }) });
+    showToast(`Jackpot set to ${amount.toLocaleString()}`, 'success');
+    loadJackpot();
+  } catch (err) { showToast(err.message); }
+}
+
+// ── Create Player ────────────────────────────────────────────
+async function createPlayer(e) {
+  e.preventDefault();
+  try {
+    const d = await apiFetch('/api/admin/players/create', { method: 'POST', body: JSON.stringify({
+      username: document.getElementById('cpUser').value.trim(),
+      email: document.getElementById('cpEmail').value.trim(),
+      password: document.getElementById('cpPass').value,
+      credits: parseFloat(document.getElementById('cpCredits').value) || 0
+    }) });
+    showToast(`Player created! ID: ${d.playerId}`, 'success');
+    e.target.reset();
+  } catch (err) { showToast(err.message); }
+}
+
+// Close modal on bg click
+document.getElementById('playerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
